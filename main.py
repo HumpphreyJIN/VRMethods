@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from Net import Net
 from Net import _change_one_hot_label
-from op import SAGOptimizer, SVRGOptimizer, SAGAOptimizer
+from op import SVRGOptimizer, SAGAOptimizer
 
 
 def load_data():
@@ -14,7 +14,6 @@ def load_data():
     x_data = x_data.reshape(-1, 784)
     y_data = _change_one_hot_label(y_data)
 
-    # 随机选择1600个样本作为训练集，400个样本作为测试集
     indices = np.random.permutation(len(x_data))
     train_indices = indices[:1600]
     test_indices = indices[1600:2000]
@@ -48,7 +47,7 @@ def train(network, optimizer, x_train, y_train, x_test, y_test, iters_num=200, b
 
         grads = network.gradient(x_batch, y_batch)
 
-        if isinstance(optimizer, (SAGOptimizer, SAGAOptimizer)):
+        if isinstance(optimizer, (SAGAOptimizer)):
             optimizer.update(network.params, grads, batch_mask)
         elif isinstance(optimizer, SVRGOptimizer):
             optimizer.update(network.params, grads, snapshot_params, snapshot_grads)
@@ -84,24 +83,19 @@ def main():
     x_train, y_train, x_test, y_test = load_data()
 
     # 使用SAGA优化器
-    print('SAGA')
     optimizer_saga = SAGAOptimizer(learning_rate=0.025, num_samples=x_train.shape[0])
     network_saga = Net(input_size=784, hidden1_size=784, hidden2_size=784, output_size=10)
-    #train_loss_saga, _, _, _ = train(network_saga, optimizer_saga, x_train, y_train, x_test, y_test)
+    train_loss_saga, _, _, _ = train(network_saga, optimizer_saga, x_train, y_train, x_test, y_test)
 
     # 使用SVRG优化器
-    print('SVRD')
     optimizer_svrg = SVRGOptimizer(learning_rate=0.005)
     network_svrg = Net(input_size=784, hidden1_size=784, hidden2_size=784, output_size=10)
     train_loss_svrg, _, _, _ = train(network_svrg, optimizer_svrg, x_train, y_train, x_test, y_test)
 
-    # 保存结果
-    #network_saga.save_parameters('params_SAGA')
-    network_svrg.save_parameters('params_SVRG')
 
     # 绘制训练损失比较图
     plot_loss({
-        #'SAGA': train_loss_saga,
+        'SAGA': train_loss_saga,
         'SVRG': train_loss_svrg
     })
 
